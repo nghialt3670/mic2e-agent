@@ -1,0 +1,142 @@
+import re
+from typing import Any, Dict, List, Union
+
+from chat2edit.context.strategies import ContextStrategy
+from chat2edit.context.utils import assign_context_values, path_to_value
+from chat2edit.models import Message
+from pydantic import TypeAdapter
+
+from app.core.chat2edit.models import Box, Image, Object, Point, Scribble, Text
+from app.core.chat2edit.models.image import Entity
+from app.core.chat2edit.models.referent import Reference
+
+CONTEXT_VALUE_BASE_TYPE = Union[
+    Image,
+    Object,
+    Box,
+    Point,
+    Text,
+    Scribble,
+    int,
+    str,
+    float,
+    bool,
+]
+# Single allowed item type (value or list of values) used for filtering
+CONTEXT_ITEM_TYPE = Union[CONTEXT_VALUE_BASE_TYPE, List[CONTEXT_VALUE_BASE_TYPE]]
+CONTEXT_TYPE = Dict[str, Union[CONTEXT_VALUE_BASE_TYPE, List[CONTEXT_VALUE_BASE_TYPE]]]
+
+
+class Mic2eContextStrategy(ContextStrategy):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def filter_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        filtered_context: Dict[str, Any] = {}
+        item_adapter = TypeAdapter(CONTEXT_ITEM_TYPE)
+
+        for key, value in context.items():
+            try:
+                item_adapter.validate_python(value)
+                filtered_context[key] = value
+            except Exception:
+                continue
+
+        return filtered_context
+
+    def contextualize_message(
+        self, message: Message, context: Dict[str, Any]
+    ) -> Message:
+        if message.contextualized:
+            return message
+
+        attachment_varnames = assign_context_values(message.attachments, context)
+        references = self._extract_references_from_text(message.text)
+        referenced_entities = self._extract_referenced_entities(
+            message.attachments, references
+        )
+        referenced_varnames = assign_context_values(referenced_entities, context)
+        message.text = self._contextualize_message_text(
+            message.text, references, referenced_varnames
+        )
+        attachment_varnames.extend(referenced_varnames)
+        message.attachments = attachment_varnames
+        message.contextualized = True
+        return message
+
+    def decontextualize_message(
+        self, message: Message, context: Dict[str, Any]
+    ) -> Message:
+        if not message.contextualized:
+            return message
+
+        varnames = self._extract_varnames_from_text(message.text)
+        references = self._extract_references_from_varnames(varnames, context)
+        message.text = self._decontextualize_message_text(
+            message.text, varnames, references
+        )
+        message.attachments = [
+            path_to_value(path, context) for path in message.attachments
+        ]
+        message.contextualized = False
+        return message
+
+    def _extract_references_from_text(self, text: str) -> List[Reference]:
+        ref_pattern = r"#([a-zA-Z0-9_]+)\[([^\]]+)\]\(([^@]+)\)"
+        matches = re.findall(ref_pattern, text)
+        return [
+            Reference(label=label, value=value, color=color)
+            for color, label, value in matches
+        ]
+
+    def _extract_varnames_from_text(self, text: str) -> List[str]:
+        ref_pattern = r"(?<![A-Za-z0-9_])@([A-Za-z_][A-Za-z0-9_]*)(?![A-Za-z0-9_])"
+        return re.findall(ref_pattern, text)
+
+    def _extract_references_from_varnames(
+        self, varnames: List[str], context: Dict[str, Any]
+    ) -> List[Reference]:
+        references = []
+        for varname in varnames:
+            referent = path_to_value(varname, context)
+            if referent.reference:
+                references.append(referent.reference)
+            else:
+                label = varname.split("_")[0].replace("@", "")
+                reference = Reference(label=label)
+                referent.reference = reference
+                references.append(reference)
+        return references
+
+    def _extract_referenced_entities(
+        self, attachments: List[Image], references: List[Reference]
+    ) -> List[Entity]:
+        reference_value_to_entity: Dict[str, Entity] = {}
+        for attachment in attachments:
+            reference_value_to_entity[attachment.reference.value] = attachment
+            for obj in attachment.get_objects():
+                reference_value_to_entity[obj.reference.value] = obj
+
+        referenced_entities = []
+        for reference in references:
+            referenced_entities.append(reference_value_to_entity[reference.value])
+
+        return referenced_entities
+
+    def _contextualize_message_text(
+        self, text: str, references: List[Reference], varnames: List[str]
+    ) -> str:
+        for reference, varname in zip(references, varnames):
+            old = f"#{reference.color}[{reference.label}]({reference.value})"
+            new = f"@{varname}"
+            text = text.replace(old, new)
+        return text
+
+    def _decontextualize_message_text(
+        self, text: str, varnames: List[str], references: List[Reference]
+    ) -> str:
+        for varname, reference in zip(varnames, references):
+            old = f"@{varname}"
+            new = f"#{reference.color}[{reference.label}]({reference.value})"
+            text = text.replace(old, new)
+        return text
