@@ -121,5 +121,19 @@ class InferenceClient:
         result_bytes = BytesIO(response.content)
         return Image.open(result_bytes).convert("RGB")
 
+    async def flux_generate(self, prompt: str) -> Image.Image:
+        """Generate an image from a text prompt using Flux."""
+        url = f"{self._host}/flux/generate"
+
+        # Prepare form data
+        data = {"prompt": prompt}
+
+        response = await self._client.post(url, data=data)
+        response.raise_for_status()
+
+        # Read generated image from response
+        result_bytes = BytesIO(response.content)
+        return Image.open(result_bytes).convert("RGB")
+
 
 inference_client = InferenceClient(INFERENCE_HOST)

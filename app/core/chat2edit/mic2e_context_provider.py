@@ -6,6 +6,7 @@ from chat2edit.models import ChatCycle
 from app.core.chat2edit.functions.apply_filter import apply_filter
 from app.core.chat2edit.functions.detect_objects import detect_objects
 from app.core.chat2edit.functions.flip_entities import flip_entities
+from app.core.chat2edit.functions.generate_object import generate_object
 from app.core.chat2edit.functions.paste_entities import paste_entities
 from app.core.chat2edit.functions.remove_entities import remove_entities
 from app.core.chat2edit.functions.respond_user import respond_user
@@ -25,6 +26,7 @@ class Mic2eContextProvider(ContextProvider):
             "apply_filter": apply_filter,
             "segment_object": segment_object,
             "detect_objects": detect_objects,
+            "generate_object": generate_object,
             "remove_entities": remove_entities,
             "rotate_entities": rotate_entities,
             "paste_entities": paste_entities,

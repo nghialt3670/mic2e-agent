@@ -1,6 +1,7 @@
 from app.core.chat2edit.functions.apply_filter import apply_filter
 from app.core.chat2edit.functions.detect_objects import detect_objects
 from app.core.chat2edit.functions.flip_entities import flip_entities
+from app.core.chat2edit.functions.generate_object import generate_object
 from app.core.chat2edit.functions.paste_entities import paste_entities
 from app.core.chat2edit.functions.remove_entities import remove_entities
 from app.core.chat2edit.functions.respond_user import respond_user
@@ -13,6 +14,7 @@ __all__ = [
     "apply_filter",
     "segment_object",
     "detect_objects",
+    "generate_object",
     "paste_entities",
     "remove_entities",
     "respond_user",

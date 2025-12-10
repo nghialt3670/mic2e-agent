@@ -56,7 +56,7 @@ class Chat2EditServiceImpl(Chat2EditService):
             message=(
                 await self._create_response_message(response)
                 if response
-                else MessageModel(text="")
+                else None
             ),
             context_file_id=await self._upload_context(updated_context),
         )

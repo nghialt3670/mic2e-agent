@@ -44,6 +44,6 @@ class Chat2EditGenerateRequestModel(BaseModel):
 
 
 class Chat2EditGenerateResponseModel(BaseModel):
-    message: MessageModel
-    cycle: Optional[ChatCycle] = Field(default=None)
-    context_file_id: Optional[str] = Field(default=None)
+    message: Optional[MessageModel] = Field(default=None)
+    cycle: ChatCycle
+    context_file_id: str 
