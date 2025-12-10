@@ -52,9 +52,11 @@ class Mic2eContextStrategy(ContextStrategy):
 
         attachment_varnames = assign_context_values(message.attachments, context)
         references = self._extract_references_from_text(message.text)
+        print("message.attachments", message.attachments)
         referenced_entities = self._extract_referenced_entities(
             message.attachments, references
         )
+        self._remove_ephemeral_entities(message.attachments)
         referenced_varnames = assign_context_values(referenced_entities, context)
         message.text = self._contextualize_message_text(
             message.text, references, referenced_varnames
@@ -113,15 +115,24 @@ class Mic2eContextStrategy(ContextStrategy):
     ) -> List[Entity]:
         reference_value_to_entity: Dict[str, Entity] = {}
         for attachment in attachments:
-            reference_value_to_entity[attachment.reference.value] = attachment
+            if attachment.reference is not None:
+                reference_value_to_entity[attachment.reference.value] = attachment
+     
             for obj in attachment.get_objects():
-                reference_value_to_entity[obj.reference.value] = obj
+                if obj.reference is not None:
+                    reference_value_to_entity[obj.reference.value] = obj
 
         referenced_entities = []
         for reference in references:
             referenced_entities.append(reference_value_to_entity[reference.value])
 
         return referenced_entities
+
+    def _remove_ephemeral_entities(self, attachments: List[Image]) -> None:
+        for attachment in attachments:
+            for obj in attachment.get_objects():
+                if obj.ephemeral:
+                    attachment.remove_object(obj)
 
     def _contextualize_message_text(
         self, text: str, references: List[Reference], varnames: List[str]

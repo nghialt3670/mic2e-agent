@@ -4,11 +4,8 @@ from chat2edit.models import (
     ExemplaryExecutionBlock,
     ExemplaryPromptCycle,
     ExemplaryPromptExchange,
+    Feedback,
     Message,
-)
-
-from app.core.chat2edit.mic2e_feedbacks import (
-    PromptBasedObjectDetectionQuantityMismatchFeedback,
 )
 
 
@@ -42,12 +39,15 @@ dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
                                     generated_code="""
 dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
 """.strip(),
-                                    feedback=PromptBasedObjectDetectionQuantityMismatchFeedback(
+                                    feedback=Feedback(
+                                        type="prompt_based_object_detection_quantity_mismatch",
                                         severity="error",
-                                        prompt="dog",
-                                        expected_quantity=1,
-                                        detected_quantity=0,
                                         function="detect_objects",
+                                        details={
+                                            "prompt": "dog",
+                                            "expected_quantity": 1,
+                                            "detected_quantity": 0,
+                                        },
                                         contextualized=True,
                                     ),
                                 )

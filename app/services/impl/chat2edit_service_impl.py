@@ -20,6 +20,7 @@ from app.schemas.chat2edit_schemas import (
     MessageModel,
 )
 from app.services.chat2edit_service import Chat2EditService
+from app.utils.factories import create_uuid4
 
 
 class Chat2EditServiceImpl(Chat2EditService):
@@ -83,7 +84,8 @@ class Chat2EditServiceImpl(Chat2EditService):
         file_ids = await asyncio.gather(
             *map(self._upload_image_attachment, message.attachments)
         )
-        attachments = [AttachmentModel(file_id=file_id) for file_id in file_ids]
+        filenames = [f"{create_uuid4()}.fig.json" for _ in file_ids]
+        attachments = [AttachmentModel(file_id=file_id, filename=filename) for file_id, filename in zip(file_ids, filenames)]
         return MessageModel(text=message.text, attachments=attachments)
 
     async def _download_image_attachment(self, file_id: str) -> Image:

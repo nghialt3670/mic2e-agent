@@ -26,7 +26,8 @@ class StorageClient:
         response = await self._client.post(url, files=files)
         response.raise_for_status()
 
-        return response.text.strip()
+        result = response.json()
+        return result["file_id"]
 
     async def download_file(self, file_id: str) -> bytes:
         """Download a file by its ID and return the file bytes."""
@@ -46,7 +47,8 @@ class StorageClient:
         response = await self._client.put(url, files=files)
         response.raise_for_status()
 
-        return response.text.strip()
+        result = response.json()
+        return result["file_id"]
 
     async def delete_file(self, file_id: str) -> str:
         """Delete a file by its ID and return the file ID."""
@@ -55,7 +57,8 @@ class StorageClient:
         response = await self._client.delete(url)
         response.raise_for_status()
 
-        return response.text.strip()
+        result = response.json()
+        return result["file_id"]
 
 
 storage_client = StorageClient(STORAGE_HOST)

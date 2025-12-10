@@ -9,11 +9,12 @@ from app.env import OPENAI_API_KEY
 
 class AttachmentModel(BaseModel):
     file_id: str
+    filename: str
 
 
 class MessageModel(BaseModel):
     text: str
-    attachments: List[AttachmentModel]
+    attachments: List[AttachmentModel] = Field(default_factory=list)
 
 
 class LlmConfig(BaseModel):

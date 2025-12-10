@@ -60,7 +60,7 @@ class InferenceClient:
         self, image: Image.Image, text: str
     ) -> List[GeneratedMask]:
         """Generate multiple masks from an image using text prompt."""
-        url = f"{self._host}/sam3/generate-masks-by-text"
+        url = f"{self._host}/sam3/generate-masks"
 
         # Convert image to bytes
         image_bytes = BytesIO()
