@@ -452,7 +452,7 @@ wheels = [
 
 [[package]]
 name = "chat2edit"
-version = "4.0.10"
+version = "4.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astor" },
@@ -462,9 +462,9 @@ dependencies = [
     { name = "openai" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c1/72/a216a01736c250cd6b3f0298177444ebbe8c0dd02a69fc531e25a2f598a9/chat2edit-4.0.10.tar.gz", hash = "sha256:54443dc715a52a299c6f5371e1c76305568d2855dee9578bc60f0292f48633fc", size = 29736, upload-time = "2025-12-10T16:27:19.349Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/d9/74ad96199ba354f92dbbd145bccd90e7e068d208d367eeb96f5c54c9b69c/chat2edit-4.1.0.tar.gz", hash = "sha256:c8d445ec4813a96d7672041a981abb1fb3f6f0ab6e98f6ee6f9826aa3b903179", size = 28958, upload-time = "2025-12-10T17:26:02.636Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/93/c077bbfdbb59b3f83ecf86621b593b866fd46abfda8983eac97afe809792/chat2edit-4.0.10-py3-none-any.whl", hash = "sha256:58fde8a3dbbf32e2fdea5e670f36e6098889e27135adbff195e4722ac3f58934", size = 54659, upload-time = "2025-12-10T16:27:18.24Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/4c/116dae9c3e170199f8784ef98dcef28bf597c536f37908a9b682963772f9/chat2edit-4.1.0-py3-none-any.whl", hash = "sha256:119270628739ab1474c266101597608107c58a6e4597fdabfe88f9762972c871", size = 50760, upload-time = "2025-12-10T17:26:01.362Z" },
 ]
 
 [[package]]
@@ -1102,7 +1102,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "chat2edit", specifier = "==4.0.10" },
+    { name = "chat2edit", specifier = "==4.1.0" },
     { name = "fastapi", specifier = ">=0.124.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "numpy", specifier = ">=2.2.6" },

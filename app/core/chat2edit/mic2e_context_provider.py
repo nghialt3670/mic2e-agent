@@ -15,11 +15,6 @@ from app.core.chat2edit.functions.segment_object import segment_object
 from app.core.chat2edit.functions.shift_entities import shift_entities
 from app.core.chat2edit.mic2e_exemplars import MIC2E_EXEMPLARS
 
-# Import custom feedback first to ensure it's registered before FeedbackUnion is created
-from app.core.chat2edit.mic2e_feedbacks import (
-    PromptBasedObjectDetectionQuantityMismatchFeedback,
-)
-
 
 class Mic2eContextProvider(ContextProvider):
     def __init__(self):

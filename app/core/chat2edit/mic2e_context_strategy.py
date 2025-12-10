@@ -52,7 +52,6 @@ class Mic2eContextStrategy(ContextStrategy):
 
         attachment_varnames = assign_context_values(message.attachments, context)
         references = self._extract_references_from_text(message.text)
-        print("message.attachments", message.attachments)
         referenced_entities = self._extract_referenced_entities(
             message.attachments, references
         )
