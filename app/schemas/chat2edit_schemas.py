@@ -4,7 +4,7 @@ from chat2edit import Chat2EditConfig
 from chat2edit.models import ChatCycle
 from pydantic import BaseModel, Field
 
-from app.env import OPENAI_API_KEY
+from app.env import GOOGLE_API_KEY
 
 
 class AttachmentModel(BaseModel):
@@ -18,14 +18,14 @@ class MessageModel(BaseModel):
 
 
 class LlmConfig(BaseModel):
-    provider: Literal["openai", "google"] = Field(default="openai")
+    provider: Literal["openai", "google"] = Field(default="google")
     api_key: Optional[str] = Field(default=None)
     model: str
     params: Dict[str, Any] = Field(default_factory=dict)
 
 
 DEFAULT_LLM_CONFIG = LlmConfig(
-    provider="openai", api_key=OPENAI_API_KEY, model="gpt-3.5-turbo", params={}
+    provider="google", api_key=GOOGLE_API_KEY, model="gemini-2.5-flash", params={}
 )
 
 

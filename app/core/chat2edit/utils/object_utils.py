@@ -18,7 +18,7 @@ def create_object_from_image_and_mask(
     obj.src = convert_image_to_data_url(obj_image)
     obj.width = obj_width
     obj.height = obj_height
-    obj.left = bbox[0]
-    obj.top = bbox[1]
+    obj.left = bbox[0] - image.width / 2 + obj_width / 2
+    obj.top = bbox[1] - image.height / 2 + obj_height / 2
 
     return obj

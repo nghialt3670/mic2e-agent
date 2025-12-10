@@ -7,6 +7,8 @@ from chat2edit.execution.decorators import (
     feedback_invalid_parameter_type,
     feedback_unexpected_error,
 )
+from chat2edit.execution.exceptions import FeedbackException
+from chat2edit.models import Feedback
 
 from app.core.chat2edit.models import Image, Object
 from app.core.chat2edit.models.fabric.filters import (
@@ -23,7 +25,7 @@ from app.core.chat2edit.utils import get_own_objects
 @feedback_ignored_return_value
 @deepcopy_parameter("image")
 @feedback_unexpected_error
-@feedback_invalid_parameter_type
+# @feedback_invalid_parameter_type
 @feedback_empty_list_parameters(["entities"])
 def apply_filter(
     image: Image,
@@ -35,29 +37,60 @@ def apply_filter(
 ) -> Image:
     filter_obj = None
 
+    if filter_value is not None:
+        if filter_value < -1.0 or filter_value > 1.0:
+            raise FeedbackException(Feedback(
+                type="invalid_filter_value", 
+                severity="error", 
+                details={"filter_name": filter_name, "filter_value": filter_value},
+            ))
+
     if filter_name == "blackWhite":
         filter_obj = BlackWhiteFilter()
     elif filter_name == "blur":
-        blur_value = filter_value if filter_value is not None else 0
-        filter_obj = BlurFilter(blur=blur_value)
+        if filter_value is None:
+            raise FeedbackException(Feedback(
+                type="missing_filter_value", 
+                severity="error", 
+                details={"filter_name": filter_name},
+            ))
+        filter_obj = BlurFilter(blur=filter_value)
     elif filter_name == "brightness":
-        brightness_value = filter_value if filter_value is not None else 0
-        filter_obj = BrightnessFilter(brightness=brightness_value)
+        if filter_value is None:
+            raise FeedbackException(Feedback(
+                type="missing_filter_value", 
+                severity="error", 
+                details={"filter_name": filter_name},
+            ))
+        filter_obj = BrightnessFilter(brightness=filter_value)
     elif filter_name == "contrast":
-        contrast_value = filter_value if filter_value is not None else 0
-        filter_obj = ContrastFilter(contrast=contrast_value)
+        if filter_value is None:
+            raise FeedbackException(Feedback(
+                type="missing_filter_value", 
+                severity="error", 
+                details={"filter_name": filter_name},
+            ))
+        filter_obj = ContrastFilter(contrast=filter_value)
     elif filter_name == "invert":
         filter_obj = InvertFilter()
     elif filter_name == "saturation":
-        saturation_value = filter_value if filter_value is not None else 0
-        filter_obj = SaturationFilter(saturation=saturation_value)
+        if filter_value is None:
+            raise FeedbackException(Feedback(
+                type="missing_filter_value", 
+                severity="error", 
+                details={"filter_name": filter_name},
+            ))
+        filter_obj = SaturationFilter(saturation=filter_value)
 
     if entities:
-        own_objects = get_own_objects(image.get_objects())
+        own_objects = get_own_objects(image, entities)
+        print("own_objects", own_objects)
         for obj in own_objects:
             if isinstance(obj, Image):
+                print("applying filter to image", obj)
                 obj.apply_filter(filter_obj)
             elif isinstance(obj, Object):
+                print("applying filter to object", obj)
                 obj.filters.append(filter_obj)
     else:
         image = image.apply_filter(filter_obj)
