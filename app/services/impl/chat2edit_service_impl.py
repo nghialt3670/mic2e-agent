@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from app.clients.storage_client import StorageClient
 from app.core.chat2edit.mic2e_context_provider import Mic2eContextProvider
-from app.core.chat2edit.mic2e_context_strategy import Mic2eContextStrategy
+from app.core.chat2edit.mic2e_context_strategy import CONTEXT_TYPE, Mic2eContextStrategy
 from app.core.chat2edit.mic2e_prompting_strategy import Mic2ePromptingStrategy
 from app.core.chat2edit.models import Image
 from app.env import GOOGLE_API_KEY, OPENAI_API_KEY
@@ -98,7 +98,7 @@ class Chat2EditServiceImpl(Chat2EditService):
 
     async def _download_context(self, file_id: str) -> Dict[str, Any]:
         context_bytes = await self._storage_client.download_file(file_id)
-        return TypeAdapter(Dict[str, Any]).validate_json(context_bytes)
+        return TypeAdapter(CONTEXT_TYPE).validate_json(context_bytes)
 
     async def _upload_context(self, context: Dict[str, Any]) -> str:
         context_bytes = TypeAdapter(Dict[str, Any]).dump_json(context)

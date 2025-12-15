@@ -17,7 +17,7 @@ async def inpaint_objects(image: Image, objects: List[Object]) -> Image:
     pil_image = image.get_image()
 
     inpainted_image = await inference_client.object_clear_inpaint(
-        pil_image, expanded_mask, "remove object"
+        pil_image, expanded_mask, "remove the instance of the object"
     )
 
     image.set_image(inpainted_image)
@@ -51,6 +51,6 @@ def create_composite_mask(image: Image, objects: List[Object]) -> PILImage.Image
     for object in objects:
         object_image = convert_data_url_to_image(object.src)
         object_mask = object_image.convert("RGBA").getchannel("A")
-        mask.paste(object_mask, (int(object.left), int(object.top)))
+        mask.paste(object_mask, (int(object.left - object.width / 2), int(object.top - object.height / 2)))
 
     return mask
