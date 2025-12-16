@@ -16,4 +16,4 @@ COPY . .
 ENV PORT=8000
 EXPOSE 8000
 
-CMD ["uv", "run", "python", "run.py"]
+CMD [".venv/bin/python", "run.py"]
