@@ -1,0 +1,101 @@
+from typing import List, Union
+
+from chat2edit.execution.decorators import (
+    feedback_ignored_return_value,
+    feedback_invalid_parameter_type,
+    feedback_unexpected_error,
+)
+from chat2edit.prompting.stubbing.decorators import exclude_coroutine
+
+from app.clients.inference_client import inference_client
+from app.core.chat2edit.models import Box, Image, Scribble
+from app.core.chat2edit.utils.scribble_utils import convert_scribble_to_mask_image
+
+
+@feedback_ignored_return_value
+@feedback_unexpected_error
+@feedback_invalid_parameter_type
+@exclude_coroutine
+async def generate_objects(
+    image: Image,
+    prompt: str,
+    phrases: List[str],
+    locations: Union[List[Box], List[Scribble], List[Union[Box, Scribble]]],
+) -> Image:
+    # Validate that phrases and locations have the same length
+    if len(phrases) != len(locations):
+        raise ValueError(
+            f"phrases and locations must have the same length. "
+            f"Got {len(phrases)} phrases and {len(locations)} locations"
+        )
+    
+    # Get the PIL image
+    pil_image = image.get_image()
+    img_width = pil_image.width
+    img_height = pil_image.height
+    
+    # Convert locations to normalized bounding boxes
+    normalized_locations = []
+    
+    for location in locations:
+        if isinstance(location, Box):
+            # Convert Box to normalized coordinates
+            # Box uses center-based coordinates with originX/originY = "center"
+            adjusted_left = location.left + img_width / 2
+            adjusted_top = location.top + img_height / 2
+            
+            # Get corners
+            x_min = adjusted_left
+            y_min = adjusted_top
+            x_max = adjusted_left + location.width
+            y_max = adjusted_top + location.height
+            
+            # Normalize to [0, 1]
+            normalized_box = [
+                max(0.0, min(1.0, x_min / img_width)),
+                max(0.0, min(1.0, y_min / img_height)),
+                max(0.0, min(1.0, x_max / img_width)),
+                max(0.0, min(1.0, y_max / img_height)),
+            ]
+            normalized_locations.append(normalized_box)
+            
+        elif isinstance(location, Scribble):
+            # Convert Scribble to mask, then extract bounding box
+            mask = convert_scribble_to_mask_image(location, image)
+            
+            # Get bounding box from mask
+            bbox = mask.getbbox()
+            if bbox is None:
+                raise ValueError("Scribble location resulted in an empty mask")
+            
+            x_min, y_min, x_max, y_max = bbox
+            
+            # Normalize to [0, 1]
+            normalized_box = [
+                max(0.0, min(1.0, x_min / img_width)),
+                max(0.0, min(1.0, y_min / img_height)),
+                max(0.0, min(1.0, x_max / img_width)),
+                max(0.0, min(1.0, y_max / img_height)),
+            ]
+            normalized_locations.append(normalized_box)
+        else:
+            raise TypeError(
+                f"Location must be Box or Scribble, got {type(location)}"
+            )
+    
+    # Call GLIGEN inpaint
+    result_image = await inference_client.gligen_inpaint(
+        image=pil_image,
+        prompt=prompt,
+        phrases=phrases,
+        locations=normalized_locations,
+        seed=42,
+    )
+    
+    # Update the image with the inpainted result
+    # Convert PIL image to data URL and update the Image object
+    from app.utils.image_utils import convert_image_to_data_url
+    
+    image.src = convert_image_to_data_url(result_image)
+    
+    return image

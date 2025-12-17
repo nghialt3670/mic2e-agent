@@ -135,5 +135,50 @@ class InferenceClient:
         result_bytes = BytesIO(response.content)
         return Image.open(result_bytes).convert("RGB")
 
+    async def gligen_inpaint(
+        self,
+        image: Image.Image,
+        prompt: str,
+        phrases: List[str],
+        locations: List[List[float]],
+        seed: int = 42,
+    ) -> Image.Image:
+        """
+        Inpaint an image using GLIGEN with text-box grounding.
+        
+        Args:
+            image: Input image to inpaint
+            prompt: Text prompt for inpainting
+            phrases: List of text phrases for the masked regions
+            locations: List of bounding boxes in normalized coordinates (0-1)
+                      Each location is [x1, y1, x2, y2]
+            seed: Random seed for reproducibility (default: 42)
+            
+        Returns:
+            Inpainted image
+        """
+        url = f"{self._host}/gligen/inpaint"
+
+        # Convert image to bytes
+        image_bytes = BytesIO()
+        image.save(image_bytes, format="PNG")
+        image_bytes.seek(0)
+
+        # Prepare form data
+        files = {"image": ("image.png", image_bytes, "image/png")}
+        data = {
+            "prompt": prompt,
+            "phrases": json.dumps(phrases),
+            "locations": json.dumps(locations),
+            "seed": seed,
+        }
+
+        response = await self._client.post(url, files=files, data=data)
+        response.raise_for_status()
+
+        # Read inpainted image from response
+        result_bytes = BytesIO(response.content)
+        return Image.open(result_bytes).convert("RGB")
+
 
 inference_client = InferenceClient(INFERENCE_HOST)
