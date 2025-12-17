@@ -84,13 +84,10 @@ def apply_filter(
 
     if entities:
         own_objects = get_own_objects(image, entities)
-        print("own_objects", own_objects)
         for obj in own_objects:
             if isinstance(obj, Image):
-                print("applying filter to image", obj)
                 obj.apply_filter(filter_obj)
             elif isinstance(obj, Object):
-                print("applying filter to object", obj)
                 obj.filters.append(filter_obj)
     else:
         image = image.apply_filter(filter_obj)

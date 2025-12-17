@@ -1,6 +1,7 @@
 from typing import List, Union
 
 from chat2edit.execution.decorators import (
+    deepcopy_parameter,
     feedback_ignored_return_value,
     feedback_invalid_parameter_type,
     feedback_unexpected_error,
@@ -11,16 +12,16 @@ from app.clients.inference_client import inference_client
 from app.core.chat2edit.models import Box, Image, Scribble
 from app.core.chat2edit.utils.scribble_utils import convert_scribble_to_mask_image
 
-
 @feedback_ignored_return_value
 @feedback_unexpected_error
 @feedback_invalid_parameter_type
 @exclude_coroutine
+@deepcopy_parameter("image")
 async def generate_objects(
     image: Image,
     prompt: str,
     phrases: List[str],
-    locations: Union[List[Box], List[Scribble], List[Union[Box, Scribble]]],
+    locations: List[Union[Box, Scribble]],
 ) -> Image:
     # Validate that phrases and locations have the same length
     if len(phrases) != len(locations):
@@ -62,7 +63,7 @@ async def generate_objects(
         elif isinstance(location, Scribble):
             # Convert Scribble to mask, then extract bounding box
             mask = convert_scribble_to_mask_image(location, image)
-            
+
             # Get bounding box from mask
             bbox = mask.getbbox()
             if bbox is None:
@@ -92,10 +93,5 @@ async def generate_objects(
         seed=42,
     )
     
-    # Update the image with the inpainted result
-    # Convert PIL image to data URL and update the Image object
-    from app.utils.image_utils import convert_image_to_data_url
-    
-    image.src = convert_image_to_data_url(result_image)
-    
+    image.set_image(result_image)    
     return image
