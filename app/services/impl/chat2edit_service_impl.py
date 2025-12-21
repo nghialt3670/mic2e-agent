@@ -143,7 +143,7 @@ class Chat2EditServiceImpl(Chat2EditService):
         return await self._storage_client.upload_file(context_bytes, "context.json")
 
     def _create_callbacks(self, cycle_id: str) -> Chat2EditCallbacks:
-        """Create callbacks that publish progress to Redis."""
+        """Create callbacks that publish progress to Redis in order."""
 
         # Store reference to redis_client to avoid closure issues
         redis_client = self._redis_client
@@ -151,63 +151,54 @@ class Chat2EditServiceImpl(Chat2EditService):
         if not redis_client:
             raise ValueError("Redis client is not initialized")
 
-        def on_request(message: Message) -> None:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(
-                        redis_client.publish_progress(
-                            cycle_id, "request", data=message.model_dump()
-                        )
+        # Create a queue and processor to serialize events
+        progress_queue = asyncio.Queue()
+        loop = asyncio.get_event_loop()
+        processor_task = None
+
+        async def _process_queue():
+            """Process progress events sequentially from the queue."""
+            while True:
+                try:
+                    item = await progress_queue.get()
+                    if item is None:  # Sentinel to stop
+                        break
+                    event_type, message, data = item
+                    await redis_client.publish_progress(
+                        cycle_id, event_type, message=message, data=data
                     )
+                    progress_queue.task_done()
+                except Exception as e:
+                    print(f"Error processing progress queue: {e}")
+
+        # Start the queue processor if loop is running
+        if loop.is_running():
+            processor_task = asyncio.create_task(_process_queue())
+
+        def _enqueue_progress(event_type: str, message: Optional[str] = None, data: Optional[Any] = None):
+            """Enqueue progress event to be processed sequentially."""
+            try:
+                if loop.is_running() and processor_task:
+                    # Put in queue (non-blocking)
+                    progress_queue.put_nowait((event_type, message, data))
             except Exception as e:
-                print(f"Error publishing request progress: {e}")
+                print(f"Error enqueueing {event_type} progress: {e}")
+
+        def on_request(message: Message) -> None:
+            _enqueue_progress("request", message="Sending request to LLM...", data=message.model_dump())
 
         def on_prompt(message: Message) -> None:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(
-                        redis_client.publish_progress(
-                            cycle_id, "prompt", data=message.model_dump()
-                        )
-                    )
-            except Exception as e:
-                print(f"Error publishing prompt progress: {e}")
+            _enqueue_progress("prompt", message="Generating prompt...", data=message.model_dump())
 
         def on_answer(message: Message) -> None:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(
-                        redis_client.publish_progress(
-                            cycle_id, "answer", data=message.model_dump()
-                        )
-                    )
-            except Exception as e:
-                print(f"Error publishing answer progress: {e}")
+            _enqueue_progress("answer", message="Received answer from LLM...", data=message.model_dump())
 
         def on_extract(code: str) -> None:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(
-                        redis_client.publish_progress(cycle_id, "extract", data=code)
-                    )
-            except Exception as e:
-                print(f"Error publishing extract progress: {e}")
+            _enqueue_progress("extract", message="Extracting code...", data=code)
 
         def on_execute(block: ExecutionBlock) -> None:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(
-                        redis_client.publish_progress(
-                            cycle_id, "execute", data=block.model_dump()
-                        )
-                    )
-            except Exception as e:
-                print(f"Error publishing execute progress: {e}")
+            block_type = getattr(block, 'type', None) or getattr(block, 'block_type', None) or str(type(block).__name__)
+            _enqueue_progress("execute", message=f"Executing: {block_type}", data=block.model_dump())
 
         return Chat2EditCallbacks(
             on_request=on_request,

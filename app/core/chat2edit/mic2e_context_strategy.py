@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 from typing import Any, Dict, List, Union
 
 from chat2edit.context.strategies import ContextStrategy
@@ -47,6 +48,7 @@ class Mic2eContextStrategy(ContextStrategy):
     def contextualize_message(
         self, message: Message, context: Dict[str, Any]
     ) -> Message:
+        message = deepcopy(message)
         if message.contextualized:
             return message
 
@@ -68,6 +70,7 @@ class Mic2eContextStrategy(ContextStrategy):
     def decontextualize_message(
         self, message: Message, context: Dict[str, Any]
     ) -> Message:
+        message = deepcopy(message)
         if not message.contextualized:
             return message
 
