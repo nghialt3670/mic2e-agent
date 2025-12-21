@@ -10,7 +10,7 @@ from app.clients.inference_client import inference_client
 from app.core.chat2edit.models import Image, Scribble
 from app.core.chat2edit.utils.object_utils import create_object_from_image_and_mask
 from app.core.chat2edit.utils.scribble_utils import convert_scribble_to_mask_image
-from app.utils.image_utils import expand_mask_image
+from app.utils.image_utils import convert_data_url_to_image, expand_mask_image
 
 
 @feedback_ignored_return_value
@@ -28,5 +28,7 @@ async def generate_object(image: Image, prompt: str, location: Scribble) -> Imag
         prompt=prompt,
     )
     obj = create_object_from_image_and_mask(inpainted_image, mask)
+    obj.left -= pil_image.width / 2
+    obj.top -= pil_image.height / 2
     image.add_object(obj)
     return image
