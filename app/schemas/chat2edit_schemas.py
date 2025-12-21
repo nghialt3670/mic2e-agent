@@ -46,4 +46,15 @@ class Chat2EditGenerateRequestModel(BaseModel):
 class Chat2EditGenerateResponseModel(BaseModel):
     message: Optional[MessageModel] = Field(default=None)
     cycle: ChatCycle
-    context_file_id: str 
+    context_file_id: str
+
+
+class Chat2EditProgressEventModel(BaseModel):
+    type: Literal[
+        "request", "prompt", "answer", "extract", "execute", "complete", "error"
+    ]
+    message: Optional[str] = Field(default=None)
+    # Use Any here because some callbacks currently publish strings or other
+    # non-dict payloads (e.g. reprs) into `data`. The frontend already treats
+    # this as an opaque JSON-like value.
+    data: Optional[Any] = Field(default=None)

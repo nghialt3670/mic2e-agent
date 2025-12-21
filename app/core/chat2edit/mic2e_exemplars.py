@@ -28,7 +28,7 @@ def create_mic2e_exemplars() -> list[Exemplar]:
 thinking:I need to detect the dog before I can remove it from the image
 commands:
 ```python
-dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
+dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
 ```
 """.strip(),
                                     ),
@@ -37,12 +37,12 @@ dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
                             blocks=[
                                 ExemplaryExecutionBlock(
                                     generated_code="""
-dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
+dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
 """.strip(),
                                     feedback=Feedback(
                                         type="prompt_based_object_detection_quantity_mismatch",
                                         severity="error",
-                                        function="detect_objects",
+                                        function="segment_objects",
                                         details={
                                             "prompt": "dog",
                                             "expected_quantity": 1,
@@ -58,7 +58,7 @@ dogs_0 = detect_objects(image_0, prompt='dog', expected_quantity=1)
                                 ExemplaryPromptExchange(
                                     answer=Message(
                                         text="""
-thinking: The detect_objects function couldn't find any dogs in the image. Since there is the segment_object function, I could try ask the user for the bounding box of the dog in the image and use the segment_object function to extract the dog from the image
+thinking: The segment_objects function couldn't find any dogs in the image. Since there is the segment_object function, I could try ask the user for the bounding box of the dog in the image and use the segment_object function to extract the dog from the image
 commands:
 ```python
 respond_user(text='I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?')

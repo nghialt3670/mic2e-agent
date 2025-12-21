@@ -28,6 +28,37 @@ async def inpaint_objects(image: Image, objects: List[Object]) -> Image:
     return image
 
 
+async def inpaint_objects_with_prompt(
+    image: Image, objects: List[Object], prompt: str
+) -> Image:
+    """Inpaint objects in an image using Stable Diffusion with a custom text prompt.
+
+    Args:
+        image: The image containing the objects to inpaint
+        objects: List of objects to inpaint
+        prompt: Text prompt describing what to generate in the masked areas
+
+    Returns:
+        Image with the objects inpainted according to the prompt
+    """
+    composite_mask = create_composite_mask(image, objects)
+    expanded_mask = expand_mask_image(composite_mask)
+    pil_image = image.get_image()
+
+    inpainted_image = await inference_client.sd_inpaint(
+        image=pil_image,
+        mask=expanded_mask,
+        prompt=prompt,
+    )
+
+    image.set_image(inpainted_image)
+
+    for object in objects:
+        object.inpainted = True
+
+    return image
+
+
 async def inpaint_uninpainted_objects_in_entities(
     image: Image, entities: List[Union[Image, Object, Text, Box, Point]]
 ) -> Image:
@@ -51,6 +82,9 @@ def create_composite_mask(image: Image, objects: List[Object]) -> PILImage.Image
     for object in objects:
         object_image = convert_data_url_to_image(object.src)
         object_mask = object_image.convert("RGBA").getchannel("A")
-        mask.paste(object_mask, (int(object.left - object.width / 2), int(object.top - object.height / 2)))
+        mask.paste(
+            object_mask,
+            (int(object.left - object.width / 2), int(object.top - object.height / 2)),
+        )
 
     return mask

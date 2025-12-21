@@ -18,7 +18,7 @@ from app.core.chat2edit.utils.object_utils import create_object_from_image_and_m
 @feedback_unexpected_error
 @feedback_invalid_parameter_type
 @exclude_coroutine
-async def detect_objects(
+async def segment_objects(
     image: Image, prompt: str, expected_quantity: int
 ) -> List[Object]:
     pil_image = image.get_image()
@@ -32,14 +32,16 @@ async def detect_objects(
     image.add_objects(objects)
 
     if len(generated_masks) != expected_quantity:
-        raise FeedbackException(Feedback(
-            type="prompt_based_object_detection_quantity_mismatch",
-            severity="error",
-            details={
-                "prompt": prompt,
-                "expected_quantity": expected_quantity,
-                "detected_quantity": len(generated_masks),
-            },
-        ))
+        raise FeedbackException(
+            Feedback(
+                type="prompt_based_object_detection_quantity_mismatch",
+                severity="error",
+                details={
+                    "prompt": prompt,
+                    "expected_quantity": expected_quantity,
+                    "detected_quantity": len(generated_masks),
+                },
+            )
+        )
 
     return objects

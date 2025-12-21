@@ -2,8 +2,11 @@ from chat2edit.models import Feedback
 from chat2edit.prompting.strategies import OtcPromptingStrategy
 
 PROMPT_BASED_OBJECT_DETECTION_QUANTITY_MISMATCH_FEEDBACK_TEXT = "Expected to extract {expected_quantity} object(s) with prompt '{prompt}', but found {detected_quantity} object(s)."
-MISSING_FILTER_VALUE_FEEDBACK_TEXT = "Filter value is required for filter '{filter_name}'."
+MISSING_FILTER_VALUE_FEEDBACK_TEXT = (
+    "Filter value is required for filter '{filter_name}'."
+)
 INVALID_FILTER_VALUE_FEEDBACK_TEXT = "Filter value '{filter_value}' is invalid for filter '{filter_name}'. It must be between -1.0 and 1.0."
+
 
 class Mic2ePromptingStrategy(OtcPromptingStrategy):
     def __init__(self) -> None:

@@ -4,9 +4,11 @@ from chat2edit.context.providers import ContextProvider
 from chat2edit.models import ChatCycle
 
 from app.core.chat2edit.functions.apply_filter import apply_filter
-from app.core.chat2edit.functions.detect_objects import detect_objects
+from app.core.chat2edit.functions.segment_objects import segment_objects
 from app.core.chat2edit.functions.flip_entities import flip_entities
+from app.core.chat2edit.functions.generate_object import generate_object
 from app.core.chat2edit.functions.generate_objects import generate_objects
+from app.core.chat2edit.functions.inpaint_objects import inpaint_objects
 from app.core.chat2edit.functions.paste_entities import paste_entities
 from app.core.chat2edit.functions.remove_entities import remove_entities
 from app.core.chat2edit.functions.respond_user import respond_user
@@ -25,8 +27,10 @@ class Mic2eContextProvider(ContextProvider):
         return {
             "apply_filter": apply_filter,
             "segment_object": segment_object,
-            "detect_objects": detect_objects,
+            "segment_objects": segment_objects,
+            "generate_object": generate_object,
             "generate_objects": generate_objects,
+            "inpaint_objects": inpaint_objects,
             "remove_entities": remove_entities,
             "rotate_entities": rotate_entities,
             "paste_entities": paste_entities,

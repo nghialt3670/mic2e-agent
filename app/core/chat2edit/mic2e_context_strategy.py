@@ -116,7 +116,7 @@ class Mic2eContextStrategy(ContextStrategy):
         for attachment in attachments:
             if attachment.reference is not None:
                 reference_value_to_entity[attachment.reference.value] = attachment
-     
+
             for obj in attachment.get_objects():
                 if obj.reference is not None:
                     reference_value_to_entity[obj.reference.value] = obj

@@ -29,10 +29,8 @@ async def flip_entities(
 
     for entity in entities:
         if axis == "x":
-            # Flip horizontally
             entity.flipX = not entity.flipX
         elif axis == "y":
-            # Flip vertically
             entity.flipY = not entity.flipY
 
     return deepcopy(image)

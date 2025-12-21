@@ -25,7 +25,7 @@ from app.core.chat2edit.utils import get_own_objects
 @feedback_ignored_return_value
 @deepcopy_parameter("image")
 @feedback_unexpected_error
-# @feedback_invalid_parameter_type
+@feedback_invalid_parameter_type
 @feedback_empty_list_parameters(["entities"])
 def apply_filter(
     image: Image,
@@ -39,47 +39,57 @@ def apply_filter(
 
     if filter_value is not None:
         if filter_value < -1.0 or filter_value > 1.0:
-            raise FeedbackException(Feedback(
-                type="invalid_filter_value", 
-                severity="error", 
-                details={"filter_name": filter_name, "filter_value": filter_value},
-            ))
+            raise FeedbackException(
+                Feedback(
+                    type="invalid_filter_value",
+                    severity="error",
+                    details={"filter_name": filter_name, "filter_value": filter_value},
+                )
+            )
 
     if filter_name == "blackWhite":
         filter_obj = BlackWhiteFilter()
     elif filter_name == "blur":
         if filter_value is None:
-            raise FeedbackException(Feedback(
-                type="missing_filter_value", 
-                severity="error", 
-                details={"filter_name": filter_name},
-            ))
+            raise FeedbackException(
+                Feedback(
+                    type="missing_filter_value",
+                    severity="error",
+                    details={"filter_name": filter_name},
+                )
+            )
         filter_obj = BlurFilter(blur=filter_value)
     elif filter_name == "brightness":
         if filter_value is None:
-            raise FeedbackException(Feedback(
-                type="missing_filter_value", 
-                severity="error", 
-                details={"filter_name": filter_name},
-            ))
+            raise FeedbackException(
+                Feedback(
+                    type="missing_filter_value",
+                    severity="error",
+                    details={"filter_name": filter_name},
+                )
+            )
         filter_obj = BrightnessFilter(brightness=filter_value)
     elif filter_name == "contrast":
         if filter_value is None:
-            raise FeedbackException(Feedback(
-                type="missing_filter_value", 
-                severity="error", 
-                details={"filter_name": filter_name},
-            ))
+            raise FeedbackException(
+                Feedback(
+                    type="missing_filter_value",
+                    severity="error",
+                    details={"filter_name": filter_name},
+                )
+            )
         filter_obj = ContrastFilter(contrast=filter_value)
     elif filter_name == "invert":
         filter_obj = InvertFilter()
     elif filter_name == "saturation":
         if filter_value is None:
-            raise FeedbackException(Feedback(
-                type="missing_filter_value", 
-                severity="error", 
-                details={"filter_name": filter_name},
-            ))
+            raise FeedbackException(
+                Feedback(
+                    type="missing_filter_value",
+                    severity="error",
+                    details={"filter_name": filter_name},
+                )
+            )
         filter_obj = SaturationFilter(saturation=filter_value)
 
     if entities:

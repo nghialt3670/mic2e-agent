@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from chat2edit.execution.decorators import (
     feedback_ignored_return_value,
@@ -81,12 +81,6 @@ async def segment_object(
         scribble_points = convert_mask_image_to_points(scribble_mask)
         for x, y in scribble_points:
             points.append(MaskLabeledPoint(x=x, y=y, label=0))
-
-    if not points and inference_box is None:
-        raise ValueError(
-            "No valid prompts provided. At least one of the following must be provided: "
-            "box, positive_points, negative_points, positive_scribble, or negative_scribble."
-        )
 
     mask = await inference_client.sam3_generate_mask(
         pil_image,
