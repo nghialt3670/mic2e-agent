@@ -46,16 +46,16 @@ async def paste_entities(
 
     image = await inpaint_uninpainted_objects_in_entities(image, entities)
 
-    for entity, location in zip(entities, positions):
-        if isinstance(location, tuple):
-            x, y = location
+    for entity, position in zip(entities, positions):
+        if isinstance(position, tuple):
+            x, y = position
         else:
             x, y = _calculate_position_coordinates(
-                location, image_width, image_height, entity.width, entity.height
+                position, image_width, image_height, entity.width, entity.height
             )
 
-        entity.left = x
-        entity.top = y
+        entity.left = x + image_width / 2
+        entity.top = y + image_height / 2
 
     return image
 
