@@ -11,7 +11,10 @@ class Reference(BaseModel):
     color: str = Field(default_factory=create_color)
 
 
-class Referent(BaseModel):
+from app.core.chat2edit.models.variable import Variable
+
+
+class Referent(Variable):
     reference: Optional[Reference] = Field(
         default=None, description="The reference of the referent"
     )

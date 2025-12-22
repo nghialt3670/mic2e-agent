@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List, Literal, Union
 
 from chat2edit.execution.decorators import (
@@ -33,4 +32,4 @@ async def flip_entities(
         elif axis == "y":
             entity.flipY = not entity.flipY
 
-    return deepcopy(image)
+    return image

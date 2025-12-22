@@ -14,7 +14,6 @@ from app.clients.inference_client import inference_client
 
 from app.core.chat2edit.models import Box, Image, Object, Text
 from app.core.chat2edit.utils.object_utils import create_object_from_image_and_mask
-from app.core.chat2edit.context_value_wrapper import NamedContextValue
 
 
 @feedback_ignored_return_value
@@ -56,11 +55,15 @@ async def segment_objects(
             annotated_image.add_object(index)
             annotated_image.add_object(bbox)
 
+        # Persist a stable variable name on the annotated image so the context
+        # strategy can use it when generating varnames.
+        annotated_image.name = "annotated_image"
+
         set_feedback(
             Feedback(
                 type="prompt_based_object_detection_quantity_mismatch",
                 severity="warning",
-                attachments=[NamedContextValue("annotated_image", annotated_image)],
+                attachments=[annotated_image],
                 details={
                     "prompt": prompt,
                     "expected_quantity": expected_quantity,

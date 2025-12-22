@@ -84,7 +84,7 @@ def create_composite_mask(image: Image, objects: List[Object]) -> PILImage.Image
         object_mask = object_image.convert("RGBA").getchannel("A")
         mask.paste(
             object_mask,
-            (int(object.left - object.width / 2), int(object.top - object.height / 2)),
+            (int(object.left - object.width / 2 + image.width / 2), int(object.top - object.height / 2 + image.height / 2)),
         )
 
     return mask

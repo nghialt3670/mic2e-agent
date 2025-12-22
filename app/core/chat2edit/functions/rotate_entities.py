@@ -1,4 +1,3 @@
-from copy import deepcopy
 from math import degrees
 from typing import List, Literal, Union
 
@@ -37,4 +36,4 @@ async def rotate_entities(
         # Fabric-style angle is in degrees
         entity.angle = (entity.angle or 0) + delta
 
-    return deepcopy(image)
+    return image

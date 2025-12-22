@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List, Literal, Optional, Union
 
 from chat2edit.execution.decorators import (
@@ -40,4 +39,4 @@ async def scale_entities(
             entity.scaleX = (entity.scaleX or 1.0) * scale
             entity.scaleY = (entity.scaleY or 1.0) * scale
 
-    return deepcopy(image)
+    return image
