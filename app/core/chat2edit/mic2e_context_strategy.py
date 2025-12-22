@@ -1,15 +1,17 @@
 import re
 from copy import deepcopy
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from chat2edit.context.strategies import ContextStrategy
 from chat2edit.context.utils import assign_context_values, path_to_value
 from chat2edit.models import Message
 from pydantic import TypeAdapter
+from chat2edit.utils import to_snake_case
 
 from app.core.chat2edit.models import Box, Image, Object, Point, Scribble, Text
 from app.core.chat2edit.models.image import Entity
 from app.core.chat2edit.models.referent import Reference
+from app.core.chat2edit.context_value_wrapper import NamedContextValue
 
 CONTEXT_VALUE_BASE_TYPE = Union[
     Image,
@@ -52,12 +54,15 @@ class Mic2eContextStrategy(ContextStrategy):
         if message.contextualized:
             return message
 
-        attachment_varnames = assign_context_values(message.attachments, context)
+        attachments, name_by_id = self._unwrap_named_values(message.attachments)
+        attachment_varnames = assign_context_values(
+            attachments, context, get_varname_prefix=self._make_prefix_fn(name_by_id)
+        )
         references = self._extract_references_from_text(message.text)
         referenced_entities = self._extract_referenced_entities(
-            message.attachments, references
+            attachments, references
         )
-        self._remove_ephemeral_entities(message.attachments)
+        self._remove_ephemeral_entities(attachments)
         referenced_varnames = assign_context_values(referenced_entities, context)
         message.text = self._contextualize_message_text(
             message.text, references, referenced_varnames
@@ -84,6 +89,29 @@ class Mic2eContextStrategy(ContextStrategy):
         ]
         message.contextualized = False
         return message
+
+    def _unwrap_named_values(
+        self, values: List[Any]
+    ) -> Tuple[List[Any], Dict[int, str]]:
+        """Return unwrapped values and a mapping from id(value) to explicit prefix."""
+        unwrapped: List[Any] = []
+        name_by_id: Dict[int, str] = {}
+        for value in values:
+            if isinstance(value, NamedContextValue):
+                name_by_id[id(value.value)] = value.name
+                unwrapped.append(value.value)
+            else:
+                unwrapped.append(value)
+        return unwrapped, name_by_id
+
+    def _make_prefix_fn(self, name_by_id: Dict[int, str]):
+        def _prefix(value: Any) -> str:
+            if (name := name_by_id.get(id(value))) is not None:
+                return name
+            # Fallback to default snake_case basename
+            return to_snake_case(type(value).__name__).split("_").pop()
+
+        return _prefix
 
     def _extract_references_from_text(self, text: str) -> List[Reference]:
         ref_pattern = r"#([a-zA-Z0-9_]+)\[([^\]]+)\]\(([^@]+)\)"

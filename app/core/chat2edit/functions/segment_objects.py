@@ -1,4 +1,6 @@
+from copy import deepcopy
 from typing import List
+from chat2edit.execution.signaling import set_feedback
 from chat2edit.models import Feedback
 from chat2edit.execution.exceptions import FeedbackException
 from chat2edit.execution.decorators import (
@@ -10,8 +12,9 @@ from chat2edit.prompting.stubbing.decorators import exclude_coroutine
 
 from app.clients.inference_client import inference_client
 
-from app.core.chat2edit.models import Image, Object
+from app.core.chat2edit.models import Box, Image, Object, Text
 from app.core.chat2edit.utils.object_utils import create_object_from_image_and_mask
+from app.core.chat2edit.context_value_wrapper import NamedContextValue
 
 
 @feedback_ignored_return_value
@@ -32,10 +35,32 @@ async def segment_objects(
     image.add_objects(objects)
 
     if len(generated_masks) != expected_quantity:
-        raise FeedbackException(
+        annotated_image = deepcopy(image)
+        for i, obj in enumerate(objects):
+            index = Text(
+                text=f"{i + 1}",
+                left=obj.left,
+                top=obj.top,
+                fontSize=min(obj.width, obj.height) / 2,
+                fill="red",
+            )
+            bbox = Box(
+                left=obj.left,
+                top=obj.top,
+                width=obj.width,
+                height=obj.height,
+                stroke="red",
+                strokeWidth=min(obj.width, obj.height) / 20,
+                fill="transparent",
+            )
+            annotated_image.add_object(index)
+            annotated_image.add_object(bbox)
+
+        set_feedback(
             Feedback(
                 type="prompt_based_object_detection_quantity_mismatch",
-                severity="error",
+                severity="warning",
+                attachments=[NamedContextValue("annotated_image", annotated_image)],
                 details={
                     "prompt": prompt,
                     "expected_quantity": expected_quantity,

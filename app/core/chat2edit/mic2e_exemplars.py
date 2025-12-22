@@ -43,6 +43,7 @@ dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
                                         type="prompt_based_object_detection_quantity_mismatch",
                                         severity="error",
                                         function="segment_objects",
+                                        attachments=["annotated_image_0"],
                                         details={
                                             "prompt": "dog",
                                             "expected_quantity": 1,
@@ -58,10 +59,10 @@ dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
                                 ExemplaryPromptExchange(
                                     answer=Message(
                                         text="""
-thinking: The segment_objects function couldn't find any dogs in the image. Since there is the segment_object function, I could try ask the user for the bounding box of the dog in the image and use the segment_object function to extract the dog from the image
+thinking: The segment_objects function couldn't find any dogs in the image. Since there is the segment_object function, I could try ask the user for the bounding box of the dog in the image and use the segment_object function to extract the dog from the image. I also should forward the annotated image from system to the user.
 commands:
 ```python
-respond_user(text='I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?')
+respond_user(text='I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?', attachments=[annotated_image_0])
 ```
 """.strip(),
                                     ),
@@ -70,11 +71,11 @@ respond_user(text='I can't find any dogs in the image. Can you please provide me
                             blocks=[
                                 ExemplaryExecutionBlock(
                                     generated_code="""
-respond_user(text='I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?')
+respond_user(text='I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?', attachments=[annotated_image_0])
 """.strip(),
                                     response=Message(
                                         text="I can't find any dogs in the image. Can you please provide me the bounding box of the dog in the image?",
-                                        attachments=["image_0"],
+                                        attachments=["annotated_image_0"],
                                         contextualized=True,
                                     ),
                                 )
