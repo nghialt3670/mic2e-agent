@@ -11,7 +11,6 @@ from chat2edit.execution.decorators import (
 from chat2edit.prompting.stubbing.decorators import exclude_coroutine
 
 from app.core.chat2edit.models import Box, Image, Object, Point, Text
-from app.core.chat2edit.utils import inpaint_uninpainted_objects_in_entities
 
 
 @feedback_ignored_return_value
@@ -44,8 +43,6 @@ async def paste_entities(
     image_width = image.get_image().width
     image_height = image.get_image().height
 
-    image = await inpaint_uninpainted_objects_in_entities(image, entities)
-
     for entity, position in zip(entities, positions):
         if isinstance(position, tuple):
             x, y = position
@@ -54,8 +51,9 @@ async def paste_entities(
                 position, image_width, image_height, entity.width, entity.height
             )
 
-        entity.left = x + image_width / 2
-        entity.top = y + image_height / 2
+        entity.left = x
+        entity.top = y
+        image.add_object(entity)
 
     return image
 

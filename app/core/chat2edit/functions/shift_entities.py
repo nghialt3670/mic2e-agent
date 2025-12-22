@@ -12,6 +12,7 @@ from chat2edit.prompting.stubbing.decorators import exclude_coroutine
 
 from app.core.chat2edit.models import Box, Image, Object, Point, Text
 from app.core.chat2edit.utils import inpaint_uninpainted_objects_in_entities
+from app.core.chat2edit.utils.image_utils import get_own_objects
 
 
 @feedback_ignored_return_value
@@ -31,7 +32,8 @@ async def shift_entities(
 
     image = await inpaint_uninpainted_objects_in_entities(image, entities)
 
-    for entity, (dx, dy) in zip(entities, offsets):
+    own_entities = get_own_objects(image, entities)
+    for entity, (dx, dy) in zip(own_entities, offsets):
         if unit == "pixel":
             entity.left = entity.left + dx
             entity.top = entity.top + dy
