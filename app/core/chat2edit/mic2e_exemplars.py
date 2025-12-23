@@ -28,7 +28,7 @@ def create_mic2e_exemplars() -> list[Exemplar]:
 thinking:I need to detect the dog before I can remove it from the image
 commands:
 ```python
-dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
+dog_list_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
 ```
 """.strip(),
                                     ),
@@ -37,7 +37,7 @@ dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
                             blocks=[
                                 ExemplaryExecutionBlock(
                                     generated_code="""
-dogs_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
+dog_list_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
 """.strip(),
                                     feedback=Feedback(
                                         type="prompt_based_object_detection_quantity_mismatch",
@@ -186,6 +186,64 @@ respond_user(text='The object has been rotated', attachments=[image_1])
                                     response=Message(
                                         text="The object has been rotated",
                                         attachments=["image_1"],
+                                        contextualized=True,
+                                    ),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]
+        ),
+        Exemplar(
+            cycles=[
+                ExemplaryChatCycle(
+                    request=Message(
+                        text="Add the dog from the first image to the left of the cat in the second image",
+                        attachments=["image_0", "image_1"],
+                        contextualized=True,
+                    ),
+                    cycles=[
+                        ExemplaryPromptCycle(
+                            exchanges=[
+                                ExemplaryPromptExchange(
+                                    answer=Message(
+                                        text="""
+thinking: The user wants to add an object from the first image to the left of an object in the second image. I need to segment the dog from the first image, segment the cat from the second image, then paste the dog to the left of the cat using paste_entities with anchor.
+commands:
+```python
+dog_list_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
+cat_list_0 = segment_objects(image_1, prompt='cat', expected_quantity=1)
+image_2 = paste_entities(image_1, entities=[dog_list_0[0]], positions=['left'], anchor=cat_list_0[0])
+respond_user(text='The dog has been added to the left of the cat', attachments=[image_2])
+```
+""".strip(),
+                                    )
+                                ),
+                            ],
+                            blocks=[
+                                ExemplaryExecutionBlock(
+                                    generated_code="""
+dog_list_0 = segment_objects(image_0, prompt='dog', expected_quantity=1)
+""".strip(),
+                                ),
+                                ExemplaryExecutionBlock(
+                                    generated_code="""
+cat_list_0 = segment_objects(image_1, prompt='cat', expected_quantity=1)
+""".strip(),
+                                ),
+                                ExemplaryExecutionBlock(
+                                    generated_code="""
+image_2 = paste_entities(image_1, entities=[dog_list_0[0]], positions=['left'], anchor=cat_list_0[0])
+""".strip(),
+                                ),
+                                ExemplaryExecutionBlock(
+                                    generated_code="""
+respond_user(text='The dog has been added to the left of the cat', attachments=[image_2])
+""".strip(),
+                                    response=Message(
+                                        text="The dog has been added to the left of the cat",
+                                        attachments=["image_2"],
                                         contextualized=True,
                                     ),
                                 ),
