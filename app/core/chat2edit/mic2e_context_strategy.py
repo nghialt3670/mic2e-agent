@@ -102,7 +102,15 @@ class Mic2eContextStrategy(ContextStrategy):
         return _prefix
 
     def _extract_references_from_text(self, text: str) -> List[Reference]:
-        ref_pattern = r"#([a-zA-Z0-9_]+)\[([^\]]+)\]\(([^@]+)\)"
+        # Match patterns like:
+        #   #red[cat](123e4567-e89b-12d3-a456-426614174000)
+        #   #45f23c[image](32b63eae-08e4-479f-9815-f13b0...)
+        # Groups:
+        #   1 -> label (alphanumeric/underscore after '#')
+        #   2 -> inner text between [ ]
+        #   3 -> value between parentheses, stopping at the first closing parenthesis
+        # Use [^)] instead of [^@] so we don't greedily swallow subsequent references.
+        ref_pattern = r"#([a-zA-Z0-9_]+)\[([^\]]+)\]\(([^)]+)\)"
         matches = re.findall(ref_pattern, text)
         return [
             Reference(label=label, value=value, color=color)
@@ -133,6 +141,7 @@ class Mic2eContextStrategy(ContextStrategy):
     ) -> List[Entity]:
         reference_value_to_entity: Dict[str, Entity] = {}
         for attachment in attachments:
+            print("Attachment Reference", attachment.reference);
             if attachment.reference is not None:
                 reference_value_to_entity[attachment.reference.value] = attachment
 
@@ -141,8 +150,10 @@ class Mic2eContextStrategy(ContextStrategy):
                     reference_value_to_entity[obj.reference.value] = obj
 
         referenced_entities = []
+        print("reference_value_to_entity.keys()", reference_value_to_entity.keys());
         for reference in references:
-            referenced_entities.append(reference_value_to_entity[reference.value])
+            entity = reference_value_to_entity[reference.value]
+            referenced_entities.append(entity)
 
         return referenced_entities
 
