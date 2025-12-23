@@ -25,6 +25,7 @@ async def paste_entities(
     entities: List[Union[Image, Object, Text, Box, Point]],
     positions: List[
         Union[
+            Point,
             Tuple[float, float],
             Literal[
                 "center",
@@ -45,7 +46,10 @@ async def paste_entities(
     image_height = image.get_image().height
 
     for entity, position in zip(entities, positions):
-        if isinstance(position, tuple):
+        if isinstance(position, Point):
+            x = position.left
+            y = position.top
+        elif isinstance(position, tuple):
             x, y = position
         else:
             if anchor is None or isinstance(anchor, Image):
