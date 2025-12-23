@@ -31,6 +31,8 @@ async def segment_objects(
         create_object_from_image_and_mask(pil_image, mask.image)
         for mask in generated_masks
     ]
+    for obj in objects:
+        obj.image_id = image.id
     image.add_objects(objects)
 
     if len(generated_masks) != expected_quantity:

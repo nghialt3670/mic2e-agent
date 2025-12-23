@@ -65,7 +65,9 @@ async def inpaint_uninpainted_objects_in_entities(
     objects_to_inpaint = [
         entity
         for entity in entities
-        if isinstance(entity, Object) and not entity.inpainted
+        if isinstance(entity, Object)
+        and not entity.inpainted
+        and entity.image_id == image.id
     ]
 
     if len(objects_to_inpaint) > 0:

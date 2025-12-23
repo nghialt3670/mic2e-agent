@@ -89,5 +89,6 @@ async def segment_object(
     )
 
     obj = create_object_from_image_and_mask(pil_image, mask)
+    obj.image_id = image.id
     image.add_object(obj)
     return obj
