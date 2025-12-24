@@ -14,12 +14,13 @@ from app.utils.image_utils import convert_data_url_to_image, expand_mask_image
 async def inpaint_objects(image: Image, objects: List[Object]) -> Image:
     composite_mask = create_composite_mask(image, objects)
     expanded_mask = expand_mask_image(composite_mask)
+    expanded_mask.save("expanded.png")
     pil_image = image.get_image()
 
     inpainted_image = await inference_client.object_clear_inpaint(
         pil_image, expanded_mask, "remove the instance of the object"
     )
-
+    inpainted_image.save("inpainted.png")
     image.set_image(inpainted_image)
 
     for object in objects:

@@ -27,6 +27,7 @@ async def replace_entities(
     replacements: List[Union[Image, Object, Text, Box, Point]]
 ) -> Image:
     image = await inpaint_uninpainted_objects_in_entities(image, targets)
+    image.remove_objects(targets)
     for target, replacement in zip(targets, replacements):
         replacement.left = target.left
         replacement.top = target.top
