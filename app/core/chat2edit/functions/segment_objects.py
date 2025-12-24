@@ -34,7 +34,7 @@ async def segment_objects(
     for obj in objects:
         obj.image_id = image.id
 
-    # image.remove_objects(get_same_objects(image, objects))
+    image.remove_objects(get_same_objects(image, objects))
     image.add_objects(objects)
 
     if len(generated_masks) != expected_quantity:
