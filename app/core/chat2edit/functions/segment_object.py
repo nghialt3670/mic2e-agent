@@ -15,6 +15,7 @@ from app.core.chat2edit.utils.scribble_utils import convert_scribble_to_mask_ima
 from app.schemas.common_schemas import Box as InferenceBox
 from app.schemas.common_schemas import MaskLabeledPoint
 from app.utils.image_utils import convert_mask_image_to_points
+from app.core.chat2edit.utils import get_same_objects
 
 
 @feedback_ignored_return_value
@@ -90,5 +91,8 @@ async def segment_object(
 
     obj = create_object_from_image_and_mask(pil_image, mask)
     obj.image_id = image.id
+
+    image.remove_objects(get_same_objects(image, [obj]))
     image.add_object(obj)
+    
     return obj

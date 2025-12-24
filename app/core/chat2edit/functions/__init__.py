@@ -5,6 +5,7 @@ from app.core.chat2edit.functions.generate_objects import generate_objects
 from app.core.chat2edit.functions.inpaint_objects import inpaint_objects
 from app.core.chat2edit.functions.paste_entities import paste_entities
 from app.core.chat2edit.functions.remove_entities import remove_entities
+from app.core.chat2edit.functions.replace_entities import replace_entities
 from app.core.chat2edit.functions.respond_user import respond_user
 from app.core.chat2edit.functions.rotate_entities import rotate_entities
 from app.core.chat2edit.functions.scale_entities import scale_entities
@@ -19,6 +20,7 @@ __all__ = [
     "inpaint_objects",
     "paste_entities",
     "remove_entities",
+    "replace_entities",
     "respond_user",
     "shift_entities",
     "rotate_entities",

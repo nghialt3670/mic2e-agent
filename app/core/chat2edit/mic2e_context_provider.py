@@ -11,6 +11,7 @@ from app.core.chat2edit.functions.generate_objects import generate_objects
 from app.core.chat2edit.functions.inpaint_objects import inpaint_objects
 from app.core.chat2edit.functions.paste_entities import paste_entities
 from app.core.chat2edit.functions.remove_entities import remove_entities
+from app.core.chat2edit.functions.replace_entities import replace_entities
 from app.core.chat2edit.functions.respond_user import respond_user
 from app.core.chat2edit.functions.rotate_entities import rotate_entities
 from app.core.chat2edit.functions.scale_entities import scale_entities
@@ -32,6 +33,7 @@ class Mic2eContextProvider(ContextProvider):
             "generate_objects": generate_objects,
             "inpaint_objects": inpaint_objects,
             "remove_entities": remove_entities,
+            "replace_entities": replace_entities,
             "rotate_entities": rotate_entities,
             "paste_entities": paste_entities,
             "shift_entities": shift_entities,

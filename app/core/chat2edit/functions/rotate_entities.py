@@ -19,19 +19,19 @@ from app.core.chat2edit.utils.image_utils import get_own_objects
 @deepcopy_parameter("image")
 @feedback_invalid_parameter_type
 @feedback_empty_list_parameters(["entities"])
-@feedback_mismatch_list_parameters(["entities", "angles"])
+@feedback_mismatch_list_parameters(["entities", "angles", "units", "directions"])
 @exclude_coroutine
 async def rotate_entities(
     image: Image,
     entities: List[Union[Image, Object, Text, Box, Point]],
     angles: List[float],
-    unit: Literal["degree", "radian"] = "degree",
-    direction: Literal["cw", "ccw"] = "cw",
+    units: List[Literal["degree", "radian"]],
+    directions: List[Literal["cw", "ccw"]],
 ) -> Image:
     image = await inpaint_uninpainted_objects_in_entities(image, entities)
 
     own_entities = get_own_objects(image, entities)
-    for entity, angle in zip(own_entities, angles):
+    for entity, angle, unit, direction in zip(own_entities, angles, units, directions):
         delta = degrees(angle) if unit == "radian" else angle
         if direction == "ccw":
             delta = -delta

@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import List
 from chat2edit.execution.signaling import set_feedback
 from chat2edit.models import Feedback
-from chat2edit.execution.exceptions import FeedbackException
 from chat2edit.execution.decorators import (
     feedback_ignored_return_value,
     feedback_invalid_parameter_type,
@@ -14,6 +13,7 @@ from app.clients.inference_client import inference_client
 
 from app.core.chat2edit.models import Box, Image, Object, Text
 from app.core.chat2edit.utils.object_utils import create_object_from_image_and_mask
+from app.core.chat2edit.utils import get_same_objects
 
 
 @feedback_ignored_return_value
@@ -33,6 +33,8 @@ async def segment_objects(
     ]
     for obj in objects:
         obj.image_id = image.id
+
+    image.remove_objects(get_same_objects(image, objects))
     image.add_objects(objects)
 
     if len(generated_masks) != expected_quantity:

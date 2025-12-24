@@ -5,6 +5,7 @@ from chat2edit.execution.decorators import (
     feedback_empty_list_parameters,
     feedback_ignored_return_value,
     feedback_invalid_parameter_type,
+    feedback_mismatch_list_parameters,
     feedback_unexpected_error,
 )
 from chat2edit.prompting.stubbing.decorators import exclude_coroutine
@@ -19,17 +20,18 @@ from app.core.chat2edit.utils.image_utils import get_own_objects
 @feedback_unexpected_error
 @feedback_invalid_parameter_type
 @feedback_empty_list_parameters(["entities"])
+@feedback_mismatch_list_parameters(["entities", "scales", "axes"])
 @exclude_coroutine
 async def scale_entities(
     image: Image,
     entities: List[Union[Image, Object, Text, Box, Point]],
-    scale: float,
-    axis: Optional[Literal["x", "y"]] = None,
+    scales: List[float],
+    axes: List[Optional[Literal["x", "y"]]],
 ) -> Image:
     image = await inpaint_uninpainted_objects_in_entities(image, entities)
 
     own_entities = get_own_objects(image, entities)
-    for entity in own_entities:
+    for entity, scale, axis in zip(own_entities, scales, axes):
         if axis == "x":
             # Scale only X axis
             entity.scaleX = (entity.scaleX or 1.0) * scale
