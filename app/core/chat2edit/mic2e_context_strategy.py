@@ -53,11 +53,6 @@ class Mic2eContextStrategy(ContextStrategy):
         if message.contextualized:
             return message
 
-        attachment_varnames = assign_context_values(
-            message.attachments,
-            context,
-            get_varname_prefix=self._make_prefix_fn(),
-        )
         references = self._extract_references_from_text(message.text)
         referenced_entities = self._extract_referenced_entities(
             message.attachments, references
@@ -66,6 +61,12 @@ class Mic2eContextStrategy(ContextStrategy):
         referenced_varnames = assign_context_values(referenced_entities, context)
         message.text = self._contextualize_message_text(
             message.text, references, referenced_varnames
+        )
+        referenced_entity_ids = set(entity.id for entity in referenced_entities)
+        attachment_varnames = assign_context_values(
+            [attachment for attachment in message.attachments if attachment.id not in referenced_entity_ids],
+            context,
+            get_varname_prefix=self._make_prefix_fn(),
         )
         attachment_varnames.extend(referenced_varnames)
         message.attachments = attachment_varnames
@@ -141,7 +142,6 @@ class Mic2eContextStrategy(ContextStrategy):
     ) -> List[Entity]:
         reference_value_to_entity: Dict[str, Entity] = {}
         for attachment in attachments:
-            print("Attachment Reference", attachment.reference);
             if attachment.reference is not None:
                 reference_value_to_entity[attachment.reference.value] = attachment
 
@@ -150,7 +150,6 @@ class Mic2eContextStrategy(ContextStrategy):
                     reference_value_to_entity[obj.reference.value] = obj
 
         referenced_entities = []
-        print("reference_value_to_entity.keys()", reference_value_to_entity.keys());
         for reference in references:
             entity = reference_value_to_entity[reference.value]
             referenced_entities.append(entity)
