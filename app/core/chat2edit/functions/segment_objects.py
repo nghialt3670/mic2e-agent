@@ -46,6 +46,7 @@ async def segment_objects(
                 top=obj.top,
                 fontSize=min(obj.width, obj.height) / 2,
                 fill="red",
+                ephemeral=True,
             )
             bbox = Box(
                 left=obj.left,
@@ -55,6 +56,7 @@ async def segment_objects(
                 stroke="red",
                 strokeWidth=min(obj.width, obj.height) / 20,
                 fill="transparent",
+                ephemeral=True,
             )
             annotated_image.add_object(index)
             annotated_image.add_object(bbox)

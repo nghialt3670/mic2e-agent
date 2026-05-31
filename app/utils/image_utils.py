@@ -41,7 +41,7 @@ def expand_mask_image(mask_image: Image.Image, iterations: int = 10) -> Image.Im
 
 def convert_image_to_data_url(image: Image.Image) -> str:
     buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
+    # image.save(buffer, format="PNG")
     buffer.seek(0)
     png_bytes = buffer.read()
     return f"data:image/png;base64,{base64.b64encode(png_bytes).decode('utf-8')}"

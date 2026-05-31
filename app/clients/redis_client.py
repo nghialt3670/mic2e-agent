@@ -11,8 +11,13 @@ class RedisClient:
     def __init__(self, host: str, port: int):
         self._redis_host = host
         self._redis_port = port
+        print(f"Connecting to Redis at {self._redis_host}:{self._redis_port}")
         self._redis = Redis(
-            host=self._redis_host, port=self._redis_port, decode_responses=False
+            host=self._redis_host, 
+            port=self._redis_port, 
+            decode_responses=False,
+            socket_connect_timeout=5,
+            socket_timeout=5,
         )
         self._progress_prefix = "chat2edit:progress:"
         self._progress_ttl = 3600
@@ -72,4 +77,10 @@ class RedisClient:
 
 
 # Global Redis client instance
-redis_client = RedisClient(REDIS_HOST, REDIS_PORT)
+try:
+    redis_client = RedisClient(REDIS_HOST, REDIS_PORT)
+except Exception as e:
+    print(f"⚠ Failed to initialize Redis client: {e}")
+    print(f"  REDIS_HOST: {REDIS_HOST}")
+    print(f"  REDIS_PORT: {REDIS_PORT}")
+    raise

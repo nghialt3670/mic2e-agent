@@ -36,8 +36,14 @@ async def generate_with_progress(
     service: Chat2EditService = Depends(get_chat2edit_service),
 ):
     """Start generation with progress tracking. Progress can be monitored via WebSocket."""
-    # Start generation in background task
-    asyncio.create_task(service.generate(request, cycle_id))
+
+    async def _run_generation() -> None:
+        try:
+            await service.generate(request, cycle_id)
+        except Exception:
+            logger.exception("Background generation failed for cycle %s", cycle_id)
+
+    asyncio.create_task(_run_generation())
     return ResponseModel(
         data={
             "cycle_id": cycle_id,

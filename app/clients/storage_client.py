@@ -24,7 +24,12 @@ class StorageClient:
         files = {"file": (filename, file_bytes)}
 
         response = await self._client.post(url, files=files)
-        response.raise_for_status()
+        if response.is_error:
+            raise httpx.HTTPStatusError(
+                f"{response.status_code} for {url}: {response.text}",
+                request=response.request,
+                response=response,
+            )
 
         result = response.json()
         return result["file_id"]

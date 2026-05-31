@@ -26,6 +26,7 @@ async def paste_entities(
     positions: List[
         Union[
             Point,
+            Box,
             Tuple[float, float],
             Literal[
                 "center",
@@ -49,6 +50,14 @@ async def paste_entities(
         if isinstance(position, Point):
             x = position.left
             y = position.top
+        elif isinstance(position, Box):
+            # Position entity within the box and scale to fit
+            x, y, scale = _calculate_box_position_and_scale(
+                position, entity, image_width, image_height
+            )
+            # Apply scaling to fit within box
+            entity.scaleX = (entity.scaleX or 1.0) * scale
+            entity.scaleY = (entity.scaleY or 1.0) * scale
         elif isinstance(position, tuple):
             x, y = position
         else:
@@ -109,6 +118,53 @@ def _calculate_position_coordinates(
     }
 
     return position_map[position]
+
+
+def _calculate_box_position_and_scale(
+    box: Box,
+    entity: Union[Object, Text, Box, Point],
+    image_width: int,
+    image_height: int,
+) -> Tuple[float, float, float]:
+    """
+    Calculate position and scale for entity to fit within the box.
+    
+    Returns:
+        Tuple of (x, y, scale) where x, y are the center coordinates
+        in Fabric.js centered coordinate system, and scale is the factor
+        to apply to fit the entity within the box.
+    """
+    # Get box dimensions considering origin
+    box_half_width = box.width / 2
+    box_half_height = box.height / 2
+    
+    # Convert box center to absolute coordinates
+    if box.originX == "center":
+        box_center_x = box.left + image_width / 2
+    else:
+        box_center_x = box.left + image_width / 2 + box_half_width
+    
+    if box.originY == "center":
+        box_center_y = box.top + image_height / 2
+    else:
+        box_center_y = box.top + image_height / 2 + box_half_height
+    
+    # Get entity's current scaled dimensions
+    entity_scaled_width = entity.width * (entity.scaleX or 1.0)
+    entity_scaled_height = entity.height * (entity.scaleY or 1.0)
+    
+    # Calculate scale factors to fit within box
+    scale_x = box.width / entity_scaled_width if entity_scaled_width > 0 else 1.0
+    scale_y = box.height / entity_scaled_height if entity_scaled_height > 0 else 1.0
+    
+    # Use minimum scale to maintain aspect ratio and ensure entity fits
+    scale = min(scale_x, scale_y, 1.0)  # Don't scale up, only down
+    
+    # Position entity at box center (in Fabric.js centered coordinates)
+    x = box_center_x - image_width / 2
+    y = box_center_y - image_height / 2
+    
+    return x, y, scale
 
 
 def _calculate_entity_anchor_position(
