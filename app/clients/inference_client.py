@@ -42,7 +42,7 @@ class InferenceClient:
             raise ValueError("Either points or box must be provided")
 
         image_bytes = BytesIO()
-        # image.save(image_bytes, format="PNG")
+        image.save(image_bytes, format="PNG")
         image_bytes.seek(0)
 
         files = {"image": ("image.png", image_bytes, "image/png")}
@@ -67,7 +67,7 @@ class InferenceClient:
 
         # Convert image to bytes
         image_bytes = BytesIO()
-        # image.save(image_bytes, format="PNG")
+        image.save(image_bytes, format="PNG")
         image_bytes.seek(0)
 
         # Prepare form data
@@ -103,11 +103,11 @@ class InferenceClient:
 
         # Convert images to bytes
         image_bytes = BytesIO()
-        # image.save(image_bytes, format="PNG")
+        image.save(image_bytes, format="PNG")
         image_bytes.seek(0)
 
         mask_bytes = BytesIO()
-        # mask.save(mask_bytes, format="PNG")
+        mask.save(mask_bytes, format="PNG")
         mask_bytes.seek(0)
 
         # Prepare form data
@@ -164,7 +164,7 @@ class InferenceClient:
 
         # Convert image to bytes
         image_bytes = BytesIO()
-        # image.save(image_bytes, format="PNG")
+        image.save(image_bytes, format="PNG")
         image_bytes.seek(0)
 
         # Prepare form data
@@ -213,11 +213,11 @@ class InferenceClient:
 
         # Convert images to bytes
         image_bytes = BytesIO()
-        # image.save(image_bytes, format="PNG")
+        image.save(image_bytes, format="PNG")
         image_bytes.seek(0)
 
         mask_bytes = BytesIO()
-        # mask.save(mask_bytes, format="PNG")
+        mask.save(mask_bytes, format="PNG")
         mask_bytes.seek(0)
 
         # Prepare form data
