@@ -69,6 +69,7 @@ class Mic2eContextStrategy(ContextStrategy):
                 if getattr(obj, "reference", None) is not None:
                     referenced_entity_to_image_ref[obj.reference.value] = attachment.id
 
+        self._remove_ephemeral_entities(message.attachments)
         referenced_varnames = assign_context_values(referenced_entities, context)
         message.text = self._contextualize_message_text(
             message.text, references, referenced_varnames
