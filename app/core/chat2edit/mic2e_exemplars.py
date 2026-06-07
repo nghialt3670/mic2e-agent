@@ -16,17 +16,18 @@ def create_interactive_exemplars() -> list[Exemplar]:
             cycles=[
                 ExemplaryChatCycle(
                     request=Message(
-                        text="Remove the cat in @box_0 and the bird in @box_1 from the image",
+                        text="Remove the cat in @box_0 (in @image_0) and the bird in @box_1 (in @image_0) from the image",
                         attachments=["image_0", "box_0", "box_1"],
                         contextualized=True,
                     ),
                     cycles=[
                         ExemplaryPromptCycle(
                             exchanges=[
+                                # Annotation references now include their parent image, e.g. @box_0 (in @image_0)
                                 ExemplaryPromptExchange(
                                     answer=Message(
                                         text="""
-thinking: since the user provided the bounding boxes of the cat and the bird, I need to segment them from the image and then remove them.
+thinking: The user provided @box_0 (in @image_0) and @box_1 (in @image_0). The parent image is explicitly specified, so I should segment the cat and bird from image_0 using those boxes and then remove them.
 commands:
 ```python
 cat_0 = segment_object(image_0, box=box_0)
@@ -74,7 +75,7 @@ respond_user(text='The cat and the bird have been removed from the image', attac
             cycles=[
                 ExemplaryChatCycle(
                     request=Message(
-                        text="Rotate @point_0",
+                        text="Rotate @point_0 (in @image_0)",
                         attachments=["image_0", "point_0"],
                         contextualized=True,
                     ),
@@ -84,7 +85,7 @@ respond_user(text='The cat and the bird have been removed from the image', attac
                                 ExemplaryPromptExchange(
                                     answer=Message(
                                         text="""
-thinking: The user wants to rotate the object at the point. I need to first extract the object using the point, then rotate it.
+thinking: The user wants to rotate @point_0 (in @image_0). The parent image is explicitly provided in the prompt, so I should segment the object from image_0 using point_0 and then rotate it.
 commands:
 ```python
 obj_0 = segment_object(image_0, positive_points=[point_0])

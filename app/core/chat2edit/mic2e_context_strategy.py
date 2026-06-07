@@ -57,17 +57,71 @@ class Mic2eContextStrategy(ContextStrategy):
         referenced_entities = self._extract_referenced_entities(
             message.attachments, references
         )
-        self._remove_ephemeral_entities(message.attachments)
+
+        # Capture annotation -> image ownership BEFORE ephemeral objects are removed.
+        referenced_entity_to_image_id: Dict[str, str] = {}
+        referenced_entity_to_image_ref: Dict[str, str] = {}
+
+        for attachment in message.attachments:
+            for obj in attachment.get_objects():
+                referenced_entity_to_image_id[obj.id] = attachment.id
+
+                if getattr(obj, "reference", None) is not None:
+                    referenced_entity_to_image_ref[obj.reference.value] = attachment.id
+
         referenced_varnames = assign_context_values(referenced_entities, context)
         message.text = self._contextualize_message_text(
             message.text, references, referenced_varnames
         )
+
         referenced_entity_ids = set(entity.id for entity in referenced_entities)
+
+        non_referenced_attachments = [
+            attachment
+            for attachment in message.attachments
+            if attachment.id not in referenced_entity_ids
+        ]
         attachment_varnames = assign_context_values(
-            [attachment for attachment in message.attachments if attachment.id not in referenced_entity_ids],
+            non_referenced_attachments,
             context,
             get_varname_prefix=self._make_prefix_fn(),
         )
+
+        image_varname_by_id = {
+            attachment.id: varname
+            for attachment, varname in zip(
+                non_referenced_attachments, attachment_varnames
+            )
+        }
+
+        referenced_varname_to_image_varname: Dict[str, str] = {}
+        object_entity_types = (Box, Point, Scribble, Text, Object)
+
+        for entity, varname in zip(referenced_entities, referenced_varnames):
+
+            if not isinstance(entity, object_entity_types):
+                continue
+
+            image_id = referenced_entity_to_image_id.get(entity.id)
+
+            if image_id is None and getattr(entity, "reference", None) is not None:
+                image_id = referenced_entity_to_image_ref.get(
+                    entity.reference.value
+                )
+
+            if image_id is None:
+                continue
+
+            image_varname = image_varname_by_id.get(image_id)
+
+            if image_varname is not None:
+                referenced_varname_to_image_varname[varname] = image_varname
+
+        message.text = self._add_image_context_to_annotation_references(
+            message.text,
+            referenced_varname_to_image_varname,
+        )
+
         attachment_varnames.extend(referenced_varnames)
         message.attachments = attachment_varnames
         message.contextualized = True
@@ -178,4 +232,16 @@ class Mic2eContextStrategy(ContextStrategy):
             old = f"@{varname}"
             new = f"#{reference.color}[{reference.label}]({reference.value})"
             text = text.replace(old, new)
+        return text
+
+    def _add_image_context_to_annotation_references(
+        self,
+        text: str,
+        annotation_to_image: Dict[str, str],
+    ) -> str:
+        for annotation_varname, image_varname in annotation_to_image.items():
+            text = text.replace(
+                f"@{annotation_varname}",
+                f"@{annotation_varname} (in @{image_varname})",
+            )
         return text
