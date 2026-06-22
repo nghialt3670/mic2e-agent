@@ -41,6 +41,7 @@ class Chat2EditGenerateRequestModel(BaseModel):
     message: MessageModel
     history: List[ChatCycle] = Field(default=[])
     context_file_id: Optional[str] = Field(default=None)
+    use_qwen: bool = Field(default=False)
 
 
 class Chat2EditGenerateResponseModel(BaseModel):

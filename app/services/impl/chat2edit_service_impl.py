@@ -42,6 +42,221 @@ class Chat2EditServiceImpl(Chat2EditService):
         if cycle_id:
             await self._redis_client.clear_progress(cycle_id)
 
+        print("use qwen")
+        print(request)
+
+        if request.use_qwen:
+            if cycle_id:
+                await self._redis_client.publish_progress(
+                    cycle_id,
+                    "request",
+                    message="Routing request to Qwen API...",
+                )
+            try:
+                # 1. Resolve and download source image
+                pil_image = None
+                if request.message.attachments:
+                    file_id = request.message.attachments[0].file_id
+                    core_image = await self._download_image_attachment(file_id)
+                    pil_image = core_image.get_image()
+                elif request.context_file_id:
+                    context = await self._download_context(request.context_file_id)
+                    from app.core.chat2edit.models.image import Image as CoreImage
+                    for val in context.values():
+                        if isinstance(val, CoreImage):
+                            pil_image = val.get_image()
+                            break
+
+                if not pil_image:
+                    raise ValueError("No input image found in attachments or context")
+
+                # 2. Call DashScope Qwen API
+                import base64
+                import httpx
+                from io import BytesIO
+                from PIL import Image as PILImage
+                from app.env import DASHSCOPE_API_KEY
+
+                if not DASHSCOPE_API_KEY:
+                    raise ValueError("DASHSCOPE_API_KEY is not configured")
+
+                clean_api_key = DASHSCOPE_API_KEY.strip('"' + "'")
+
+                # Resize image to a maximum dimension of 1024 to keep base64 payload size small and prevent ReadError
+                max_dimension = 1024
+                if max(pil_image.width, pil_image.height) > max_dimension:
+                    pil_image.thumbnail((max_dimension, max_dimension))
+
+                buffered = BytesIO()
+                rgb_image = pil_image.convert("RGB") if pil_image.mode != "RGB" else pil_image
+                rgb_image.save(buffered, format="JPEG", quality=85)
+                img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                image_data_url = f"data:image/jpeg;base64,{img_str}"
+
+                headers = {
+                    "Authorization": f"Bearer {clean_api_key}",
+                    "Content-Type": "application/json"
+                }
+
+                payload = {
+                    "model": "qwen-image-edit",
+                    "input": {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"image": image_data_url},
+                                    {"text": request.message.text}
+                                ]
+                            }
+                        ]
+                    }
+                }
+
+                async with httpx.AsyncClient(timeout=300.0) as client:
+                    url = "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+                    try:
+                        response = await client.post(url, json=payload, headers=headers)
+                        if response.status_code == 200:
+                            print(f"[Qwen API Success] Status: {response.status_code}, Body: {response.text}")
+                        else:
+                            print(f"[Qwen API Error] Status: {response.status_code}, Body: {response.text}")
+                        response.raise_for_status()
+                    except httpx.HTTPStatusError as err:
+                        error_body = err.response.text
+                        print(f"[Qwen API HTTPStatusError] Status: {err.response.status_code}, Body: {error_body}")
+                        raise RuntimeError(f"Qwen API error (HTTP {err.response.status_code}): {error_body}") from err
+
+                    res_data = response.json()
+
+                    # Handle asynchronous tasks (if task_id is present, poll for completion)
+                    task_id = res_data.get("output", {}).get("task_id")
+                    if task_id:
+                        status_url = f"https://dashscope-intl.aliyuncs.com/api/v1/tasks/{task_id}"
+                        while True:
+                            await asyncio.sleep(2)
+                            try:
+                                status_resp = await client.get(status_url, headers=headers)
+                                if status_resp.status_code != 200:
+                                    print(f"[Qwen Task Status Error] Status: {status_resp.status_code}, Body: {status_resp.text}")
+                                status_resp.raise_for_status()
+                            except httpx.HTTPStatusError as err:
+                                error_body = err.response.text
+                                print(f"[Qwen Task Status HTTPStatusError] Status: {err.response.status_code}, Body: {error_body}")
+                                raise RuntimeError(f"Qwen task status check error (HTTP {err.response.status_code}): {error_body}") from err
+                            status_data = status_resp.json()
+                            task_status = status_data.get("output", {}).get("task_status")
+                            if task_status == "SUCCEEDED":
+                                res_data = status_data
+                                break
+                            elif task_status in ["FAILED", "CANCELED"]:
+                                raise RuntimeError(f"Qwen task {task_status}: {status_data.get('output', {}).get('message')}")
+
+                    # Extract result image URL
+                    # Primary path: output.choices[0].message.content[0].image
+                    # (actual response format from qwen-image-edit intl endpoint)
+                    output_url = None
+                    choices = res_data.get("output", {}).get("choices", [])
+                    if choices:
+                        content = choices[0].get("message", {}).get("content", [])
+                        if isinstance(content, list):
+                            for item in content:
+                                if "image" in item:
+                                    output_url = item["image"]
+                                    break
+
+                    # Fallback path: output.results[0].url (older/async task format)
+                    if not output_url:
+                        output_results = res_data.get("output", {}).get("results", [])
+                        if output_results:
+                            output_url = output_results[0].get("url")
+
+                    if not output_url:
+                        raise RuntimeError(f"Could not extract result image URL from Qwen response: {res_data}")
+
+                    print(f"[Qwen API] Extracted output image URL: {output_url}")
+
+                    try:
+                        img_resp = await client.get(output_url)
+                        img_resp.raise_for_status()
+                    except httpx.HTTPStatusError as err:
+                        print(f"[Qwen Image Download Error] Status: {err.response.status_code}")
+                        raise RuntimeError(f"Failed to download Qwen result image: {err}") from err
+                    edited_pil_image = PILImage.open(BytesIO(img_resp.content)).convert("RGB")
+
+                # 3. Create CoreImage representation and upload
+                from app.core.chat2edit.models.image import Image as CoreImage
+                from app.utils.image_utils import convert_image_to_data_url
+                from chat2edit.models.message import Message as Chat2EditMessage
+                from chat2edit.models import ChatCycle
+
+                # Build CoreImage by constructing via model_validate so Pydantic resolves the
+                # FabricGroup.objects discriminator (FabricChild union) correctly.
+                # We include the Fabric.js layout properties (originX, originY, left, top)
+                # that the frontend's createFigObjectFromImageFile produces, otherwise
+                # Fabric.js Group.fromObject() will render a black canvas.
+                img_data_url = convert_image_to_data_url(edited_pil_image)
+                img_w = edited_pil_image.width
+                img_h = edited_pil_image.height
+                output_core_image = CoreImage.model_validate({
+                    "left": img_w / 2,
+                    "top": img_h / 2,
+                    "width": img_w,
+                    "height": img_h,
+                    "objects": [{
+                        "type": "Image",
+                        "src": img_data_url,
+                        "width": img_w,
+                        "height": img_h,
+                        "originX": "center",
+                        "originY": "center",
+                        "left": 0,
+                        "top": 0,
+                        "selectable": False,
+                    }]
+                })
+                res_file_id = await self._upload_image_attachment(output_core_image)
+
+                # 4. Construct result
+                response_text = "Here is your edited image."
+                response_message = Chat2EditMessage(text=response_text, attachments=[output_core_image])
+
+                updated_context = {"image": output_core_image}
+                context_file_id = await self._upload_context(updated_context)
+
+                request_attachments = []
+                if request.message.attachments:
+                    orig_file_id = request.message.attachments[0].file_id
+                    orig_core_image = await self._download_image_attachment(orig_file_id)
+                    request_attachments.append(orig_core_image)
+
+                request_chat2edit_msg = Chat2EditMessage(text=request.message.text, attachments=request_attachments)
+                chat_cycle = ChatCycle(request=request_chat2edit_msg, cycles=[])
+
+                result = Chat2EditGenerateResponseModel(
+                    cycle=chat_cycle,
+                    message=await self._create_response_message(response_message),
+                    context_file_id=context_file_id,
+                )
+
+                if cycle_id:
+                    await self._redis_client.publish_progress(
+                        cycle_id,
+                        "complete",
+                        message="Generation completed successfully",
+                        data=result.model_dump(mode="json"),
+                    )
+                return result
+
+            except Exception as e:
+                if cycle_id:
+                    await self._redis_client.publish_progress(
+                        cycle_id,
+                        "error",
+                        message=str(e),
+                    )
+                raise
+
         # Create callbacks if cycle_id is provided
         callbacks = None
         flush_progress: Optional[Callable[[], Awaitable[None]]] = None

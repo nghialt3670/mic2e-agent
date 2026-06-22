@@ -9,6 +9,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 INFERENCE_API_URL = os.getenv("INFERENCE_API_URL")
 STORAGE_API_URL = os.getenv("STORAGE_API_URL")
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
 
 # Redis configuration - supports both "host:port" format and separate variables
 REDIS_HOST_ENV = os.getenv("REDIS_HOST", "")
